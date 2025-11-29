@@ -67,7 +67,7 @@ func main() {
 		}
 	case "view":
 		if *userID <= 0 {
-			fmt.Println("Error: The 'view-users' task requires a valid positive -id flag.")
+			fmt.Println("Error: The 'view' task requires a valid positive -id flag.")
 			flag.Usage() // Show user how to use the flags
 			os.Exit(1)
 		}
