@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/hakimkal/db-with-sqlx/internal/config"
 	"github.com/hakimkal/db-with-sqlx/internal/service"
@@ -14,6 +16,11 @@ import (
 )
 
 var db *sqlx.DB
+
+type CliArgs struct {
+	ListUsers string `long:"list-users" description:"List of users"`
+	ViewUsers string `long:"view-user" description:"List of users"`
+}
 
 func main() {
 
@@ -44,15 +51,53 @@ func main() {
 
 	fmt.Println("Database successfully connected and initialized.")
 
-	var userService = service.DbService{Db: db}
+	taskName := flag.String("taskName", "none", "Specify the task: 'list' or 'view-user'")
 
-	users, err := userService.ListUsers()
-	if err != nil {
-		log.Printf("%v", err)
-	}
-	for _, user := range users {
+	userID := flag.Int("id", 0, "The ID of the user to view (required for view-users task)")
 
-		fmt.Printf("%d | %s | %s \n", user.Id, user.Name, user.Email)
+	flag.Parse()
+
+	switch *taskName {
+
+	case "list":
+		var userService = service.DbService{Db: db}
+
+		users, err := userService.ListUsers()
+		if err != nil {
+			log.Printf("%v", err)
+		}
+		for _, user := range users {
+
+			fmt.Printf("%d | %s | %s \n", user.Id, user.Name, user.Email)
+		}
+	case "view":
+		if *userID <= 0 {
+			fmt.Println("Error: The 'view-users' task requires a valid positive -id flag.")
+			flag.Usage() // Show user how to use the flags
+			os.Exit(1)
+		}
+		var userService = service.DbService{Db: db}
+		user, err := userService.GetUser(*userID)
+		if err != nil {
+			log.Printf("Select user error | %v", err)
+
+		}
+		if user == nil {
+			fmt.Println("User not found")
+		} else {
+			fmt.Printf("%s | %s | %s \n", user.Id, user.Name, user.Email)
+
+		}
+
+	case "none":
+		// This runs if the user didn't provide the flag, or used the default.
+		fmt.Println("You need to specify a taskName.")
+		flag.Usage() // Prints usage instructions
+
+	default:
+
+		fmt.Printf("Unknown task specified: %s\n", *taskName)
+		flag.Usage()
 	}
-	//log.Printf("%+v\n", users)
+
 }

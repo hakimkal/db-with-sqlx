@@ -1,6 +1,9 @@
 package service
 
 import (
+	"database/sql"
+	"errors"
+
 	"github.com/hakimkal/db-with-sqlx/internal/model"
 	"github.com/jmoiron/sqlx"
 )
@@ -27,6 +30,11 @@ func (s *DbService) CreateUser(newUser User) (*User, error) {
 func (s *DbService) GetUser(Id int) (*User, error) {
 	var user User
 	err := s.Db.Get(&user, "SELECT id, name, email FROM users WHERE id = $1", Id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+	}
 	return &user, err
 }
 
