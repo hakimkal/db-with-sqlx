@@ -32,7 +32,7 @@ func (s *DbService) GetUser(Id int) (*User, error) {
 	err := s.Db.Get(&user, "SELECT id, name, email FROM users WHERE id = $1", Id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
+			return nil, sql.ErrNoRows
 		}
 	}
 	return &user, err

@@ -17,11 +17,6 @@ import (
 
 var db *sqlx.DB
 
-type CliArgs struct {
-	ListUsers string `long:"list-users" description:"List of users"`
-	ViewUsers string `long:"view-user" description:"List of users"`
-}
-
 func main() {
 
 	var ctx = context.Background()

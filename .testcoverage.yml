@@ -1,0 +1,12 @@
+profile: coverage.out
+# Holds coverage thresholds percentages, values should be in range [0-100].
+threshold:
+  # Minimum overall project coverage percentage required.
+  total: 70
+exclude:
+  # Exclude files or packages matching their paths
+  paths:
+    - \.pb\.go$    # excludes all protobuf generated files
+    - ^pkg/bar     # exclude package `pkg/bar`
+    - cmd/.*
+    - internal/config/.*

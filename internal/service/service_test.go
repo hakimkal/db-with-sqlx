@@ -2,13 +2,16 @@ package service
 
 import (
 	"context"
+	"database/sql"
 
 	"log"
 	"testing"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/hakimkal/db-with-sqlx/internal/config"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -89,4 +92,60 @@ func TestDBService_ListUsers(t *testing.T) {
 		db.Close()
 	})
 
+}
+
+func TestDbService_GetUser(t *testing.T) {
+	// Create a mock database connection
+	mockDB, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+	}
+	defer mockDB.Close()
+
+	// 2. Wrap the mock standard library DB in sqlx
+	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
+	service := &DbService{Db: sqlxDB}
+
+	t.Run("should return a user when found", func(t *testing.T) {
+		userID := 1
+		// Define the expected SQL query behavior
+		rows := sqlmock.NewRows([]string{"id", "name", "email"}).
+			AddRow(userID, "Test Name", "test@example.com")
+
+		//  query with the given ID argument
+		mock.ExpectQuery("SELECT id, name, email FROM users WHERE id = \\$1").
+			WithArgs(userID).
+			WillReturnRows(rows)
+
+		// Call the function under test
+		user, err := service.GetUser(userID)
+
+		// Assertions
+		assert.NoError(t, err)
+		assert.NotNil(t, user)
+		assert.Equal(t, "Test Name", user.Name)
+
+		// Ensure expected database interactions happened
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("should return sql.ErrNoRows when user is not found", func(t *testing.T) {
+		userID := 999
+
+		//  query but return the specific standard error for no results
+		mock.ExpectQuery("SELECT id, name, email FROM users WHERE id = \\$1").
+			WithArgs(userID).
+			WillReturnError(sql.ErrNoRows)
+
+		// Call the function under test
+		user, err := service.GetUser(userID)
+
+		log.Printf("returned user %v | err %v", user, err)
+		// Assertions
+		assert.ErrorIs(t, err, sql.ErrNoRows)
+		assert.Nil(t, user) // User pointer should be nil
+
+		// Ensure all expected database interactions happened
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
 }
