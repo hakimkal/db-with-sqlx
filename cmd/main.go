@@ -74,7 +74,7 @@ func main() {
 		var userService = service.DbService{Db: db}
 		user, err := userService.GetUser(*userID)
 		if err != nil {
-			log.Printf("Select user error | %v", err)
+			log.Printf("Select user error | %v for UserID %d ", err, *userID)
 
 		}
 		if user == nil {
